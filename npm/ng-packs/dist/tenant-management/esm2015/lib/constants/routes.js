@@ -3,20 +3,23 @@
  * @suppress {checkTypes,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 /** @type {?} */
-export const TENANT_MANAGEMENT_ROUTES = (/** @type {?} */ ([
-    {
-        name: 'Tenant Management',
-        path: 'tenant-management',
-        parentName: 'Administration',
-        layout: "application" /* application */,
-        children: [
-            {
-                path: 'tenants',
-                name: 'Tenants',
-                order: 1,
-                requiredPolicy: 'AbpTenantManagement.Tenants',
-            },
-        ],
-    },
-]));
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicm91dGVzLmpzIiwic291cmNlUm9vdCI6Im5nOi8vQGFicC9uZy50ZW5hbnQtbWFuYWdlbWVudC8iLCJzb3VyY2VzIjpbImxpYi9jb25zdGFudHMvcm91dGVzLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7O0FBRUEsTUFBTSxPQUFPLHdCQUF3QixHQUFHLG1CQUFBO0lBQ3RDO1FBQ0UsSUFBSSxFQUFFLG1CQUFtQjtRQUN6QixJQUFJLEVBQUUsbUJBQW1CO1FBQ3pCLFVBQVUsRUFBRSxnQkFBZ0I7UUFDNUIsTUFBTSxpQ0FBeUI7UUFDL0IsUUFBUSxFQUFFO1lBQ1I7Z0JBQ0UsSUFBSSxFQUFFLFNBQVM7Z0JBQ2YsSUFBSSxFQUFFLFNBQVM7Z0JBQ2YsS0FBSyxFQUFFLENBQUM7Z0JBQ1IsY0FBYyxFQUFFLDZCQUE2QjthQUM5QztTQUNGO0tBQ0Y7Q0FDRixFQUFtQiIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEFCUCwgZUxheW91dFR5cGUgfSBmcm9tICdAYWJwL25nLmNvcmUnO1xuXG5leHBvcnQgY29uc3QgVEVOQU5UX01BTkFHRU1FTlRfUk9VVEVTID0gW1xuICB7XG4gICAgbmFtZTogJ1RlbmFudCBNYW5hZ2VtZW50JyxcbiAgICBwYXRoOiAndGVuYW50LW1hbmFnZW1lbnQnLFxuICAgIHBhcmVudE5hbWU6ICdBZG1pbmlzdHJhdGlvbicsXG4gICAgbGF5b3V0OiBlTGF5b3V0VHlwZS5hcHBsaWNhdGlvbixcbiAgICBjaGlsZHJlbjogW1xuICAgICAge1xuICAgICAgICBwYXRoOiAndGVuYW50cycsXG4gICAgICAgIG5hbWU6ICdUZW5hbnRzJyxcbiAgICAgICAgb3JkZXI6IDEsXG4gICAgICAgIHJlcXVpcmVkUG9saWN5OiAnQWJwVGVuYW50TWFuYWdlbWVudC5UZW5hbnRzJyxcbiAgICAgIH0sXG4gICAgXSxcbiAgfSxcbl0gYXMgQUJQLkZ1bGxSb3V0ZVtdO1xuIl19
+export const TENANT_MANAGEMENT_ROUTES = {
+    routes: (/** @type {?} */ ([
+        {
+            name: 'AbpTenantManagement::Menu:TenantManagement',
+            path: 'tenant-management',
+            parentName: 'AbpUiNavigation::Menu:Administration',
+            layout: "application" /* application */,
+            iconClass: 'fa fa-users',
+            children: [
+                {
+                    path: 'tenants',
+                    name: 'AbpTenantManagement::Tenants',
+                    order: 1,
+                    requiredPolicy: 'AbpTenantManagement.Tenants',
+                },
+            ],
+        },
+    ])),
+};
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicm91dGVzLmpzIiwic291cmNlUm9vdCI6Im5nOi8vQGFicC9uZy50ZW5hbnQtbWFuYWdlbWVudC8iLCJzb3VyY2VzIjpbImxpYi9jb25zdGFudHMvcm91dGVzLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7O0FBRUEsTUFBTSxPQUFPLHdCQUF3QixHQUFHO0lBQ3RDLE1BQU0sRUFBRSxtQkFBQTtRQUNOO1lBQ0UsSUFBSSxFQUFFLDRDQUE0QztZQUNsRCxJQUFJLEVBQUUsbUJBQW1CO1lBQ3pCLFVBQVUsRUFBRSxzQ0FBc0M7WUFDbEQsTUFBTSxpQ0FBeUI7WUFDL0IsU0FBUyxFQUFFLGFBQWE7WUFDeEIsUUFBUSxFQUFFO2dCQUNSO29CQUNFLElBQUksRUFBRSxTQUFTO29CQUNmLElBQUksRUFBRSw4QkFBOEI7b0JBQ3BDLEtBQUssRUFBRSxDQUFDO29CQUNSLGNBQWMsRUFBRSw2QkFBNkI7aUJBQzlDO2FBQ0Y7U0FDRjtLQUNGLEVBQW1CO0NBQ3JCIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQUJQLCBlTGF5b3V0VHlwZSB9IGZyb20gJ0BhYnAvbmcuY29yZSc7XG5cbmV4cG9ydCBjb25zdCBURU5BTlRfTUFOQUdFTUVOVF9ST1VURVMgPSB7XG4gIHJvdXRlczogW1xuICAgIHtcbiAgICAgIG5hbWU6ICdBYnBUZW5hbnRNYW5hZ2VtZW50OjpNZW51OlRlbmFudE1hbmFnZW1lbnQnLFxuICAgICAgcGF0aDogJ3RlbmFudC1tYW5hZ2VtZW50JyxcbiAgICAgIHBhcmVudE5hbWU6ICdBYnBVaU5hdmlnYXRpb246Ok1lbnU6QWRtaW5pc3RyYXRpb24nLFxuICAgICAgbGF5b3V0OiBlTGF5b3V0VHlwZS5hcHBsaWNhdGlvbixcbiAgICAgIGljb25DbGFzczogJ2ZhIGZhLXVzZXJzJyxcbiAgICAgIGNoaWxkcmVuOiBbXG4gICAgICAgIHtcbiAgICAgICAgICBwYXRoOiAndGVuYW50cycsXG4gICAgICAgICAgbmFtZTogJ0FicFRlbmFudE1hbmFnZW1lbnQ6OlRlbmFudHMnLFxuICAgICAgICAgIG9yZGVyOiAxLFxuICAgICAgICAgIHJlcXVpcmVkUG9saWN5OiAnQWJwVGVuYW50TWFuYWdlbWVudC5UZW5hbnRzJyxcbiAgICAgICAgfSxcbiAgICAgIF0sXG4gICAgfSxcbiAgXSBhcyBBQlAuRnVsbFJvdXRlW10sXG59O1xuIl19

@@ -1,5 +1,5 @@
 import { Config } from './config';
-import { eLayoutType } from '../enums';
+import { eLayoutType } from '../enums/common';
 
 export namespace ABP {
   export interface Root {
@@ -31,6 +31,7 @@ export namespace ABP {
     parentName?: string;
     path: string;
     requiredPolicy?: string;
+    iconClass?: string;
   }
 
   export interface FullRoute extends Route {

@@ -18,20 +18,7 @@
       "es2018",
       "dom"
     ],
-    "paths": {
-      "theme-basic": [
-        "dist/theme-basic"
-      ],
-      "theme-basic/*": [
-        "dist/theme-basic/*"
-      ],
-      "tenant-management": [
-        "dist/tenant-management"
-      ],
-      "tenant-management/*": [
-        "dist/tenant-management/*"
-      ]
-    }
+    "paths": {}
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,

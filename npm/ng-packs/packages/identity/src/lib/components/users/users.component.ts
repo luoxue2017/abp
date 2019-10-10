@@ -1,19 +1,18 @@
 import { ABP } from '@abp/ng.core';
 import { ConfirmationService, Toaster } from '@abp/ng.theme.shared';
-import { Component, OnInit, TemplateRef, TrackByFunction, ViewChild } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { validatePassword } from '@ngx-validate/core';
+import { Component, TemplateRef, TrackByFunction, ViewChild } from '@angular/core';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { Select, Store } from '@ngxs/store';
-import { combineLatest, Observable, Subject } from 'rxjs';
-import { debounceTime, filter, map, pluck, take } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { finalize, pluck, switchMap, take } from 'rxjs/operators';
 import snq from 'snq';
 import {
-  IdentityAddUser,
-  IdentityDeleteUser,
-  IdentityGetUserById,
-  IdentityGetUserRoles,
-  IdentityGetUsers,
-  IdentityUpdateUser,
+  CreateUser,
+  DeleteUser,
+  GetUserById,
+  GetUserRoles,
+  GetUsers,
+  UpdateUser,
 } from '../../actions/identity.actions';
 import { Identity } from '../../models/identity';
 import { IdentityState } from '../../states/identity.state';
@@ -21,7 +20,7 @@ import { IdentityState } from '../../states/identity.state';
   selector: 'abp-users',
   templateUrl: './users.component.html',
 })
-export class UsersComponent implements OnInit {
+export class UsersComponent {
   @Select(IdentityState.getUsers)
   data$: Observable<Identity.UserItem[]>;
 
@@ -51,7 +50,9 @@ export class UsersComponent implements OnInit {
 
   loading: boolean = false;
 
-  search$ = new Subject<string>();
+  modalBusy: boolean = false;
+
+  sortOrder: string = 'asc';
 
   trackByFn: TrackByFunction<AbstractControl> = (index, item) => Object.keys(item)[0] || index;
 
@@ -61,26 +62,14 @@ export class UsersComponent implements OnInit {
 
   constructor(private confirmationService: ConfirmationService, private fb: FormBuilder, private store: Store) {}
 
-  ngOnInit() {
-    this.search$.pipe(debounceTime(300)).subscribe(value => {
-      this.pageQuery.filter = value;
-      this.get();
-    });
+  onSearch(value) {
+    this.pageQuery.filter = value;
+    this.get();
   }
 
   buildForm() {
     this.roles = this.store.selectSnapshot(IdentityState.getRoles);
-
     this.form = this.fb.group({
-      password: [
-        '',
-        [
-          Validators.required,
-          Validators.maxLength(32),
-          Validators.minLength(6),
-          validatePassword(['small', 'capital', 'number', 'special']),
-        ],
-      ],
       userName: [this.selected.userName || '', [Validators.required, Validators.maxLength(256)]],
       email: [this.selected.email || '', [Validators.required, Validators.email, Validators.maxLength(256)]],
       name: [this.selected.name || '', [Validators.maxLength(64)]],
@@ -96,6 +85,9 @@ export class UsersComponent implements OnInit {
         ),
       ),
     });
+    if (!this.selected.userName) {
+      this.form.addControl('password', new FormControl('', [Validators.required, Validators.maxLength(32)]));
+    }
   }
 
   openModal() {
@@ -110,10 +102,10 @@ export class UsersComponent implements OnInit {
   }
 
   onEdit(id: string) {
-    combineLatest([this.store.dispatch(new IdentityGetUserById(id)), this.store.dispatch(new IdentityGetUserRoles(id))])
+    this.store
+      .dispatch(new GetUserById(id))
       .pipe(
-        filter(([res1, res2]) => res1 && res2),
-        map(([state, _]) => state),
+        switchMap(() => this.store.dispatch(new GetUserRoles(id))),
         pluck('IdentityState'),
         take(1),
       )
@@ -126,6 +118,7 @@ export class UsersComponent implements OnInit {
 
   save() {
     if (!this.form.valid) return;
+    this.modalBusy = true;
 
     const { roleNames } = this.form.value;
     const mappedRoleNames = snq(
@@ -136,17 +129,18 @@ export class UsersComponent implements OnInit {
     this.store
       .dispatch(
         this.selected.id
-          ? new IdentityUpdateUser({
+          ? new UpdateUser({
               ...this.form.value,
               id: this.selected.id,
               roleNames: mappedRoleNames,
             })
-          : new IdentityAddUser({
+          : new CreateUser({
               ...this.form.value,
               roleNames: mappedRoleNames,
             }),
       )
       .subscribe(() => {
+        this.modalBusy = false;
         this.isModalVisible = false;
       });
   }
@@ -158,7 +152,7 @@ export class UsersComponent implements OnInit {
       })
       .subscribe((status: Toaster.Status) => {
         if (status === Toaster.Status.confirm) {
-          this.store.dispatch(new IdentityDeleteUser(id));
+          this.store.dispatch(new DeleteUser(id));
         }
       });
   }
@@ -172,6 +166,13 @@ export class UsersComponent implements OnInit {
 
   get() {
     this.loading = true;
-    this.store.dispatch(new IdentityGetUsers(this.pageQuery)).subscribe(() => (this.loading = false));
+    this.store
+      .dispatch(new GetUsers(this.pageQuery))
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe();
+  }
+
+  changeSortOrder() {
+    this.sortOrder = this.sortOrder.toLowerCase() === 'asc' ? 'desc' : 'asc';
   }
 }

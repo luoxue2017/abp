@@ -1,8 +1,10 @@
-export class SessionSetLanguage {
+import { ABP } from '../models';
+
+export class SetLanguage {
   static readonly type = '[Session] Set Language';
   constructor(public payload: string) {}
 }
-export class SessionSetTenantId {
-  static readonly type = '[Session] Set Tenant Id';
-  constructor(public payload: string) {}
+export class SetTenant {
+  static readonly type = '[Session] Set Tenant';
+  constructor(public payload: ABP.BasicItem) {}
 }

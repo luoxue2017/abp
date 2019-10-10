@@ -52,36 +52,39 @@ namespace Volo.Docs.Pages.Documents.Project
 
         public string DocumentsUrlPrefix { get; set; }
 
+        public bool ShowProjectsCombobox { get; set; }
+
         public bool DocumentLanguageIsDifferent { get; set; }
 
         private readonly IDocumentAppService _documentAppService;
         private readonly IDocumentToHtmlConverterFactory _documentToHtmlConverterFactory;
         private readonly IProjectAppService _projectAppService;
-        private readonly DocsUrlOptions _options;
+        private readonly DocsUiOptions _uiOptions;
 
         public IndexModel(
             IDocumentAppService documentAppService,
             IDocumentToHtmlConverterFactory documentToHtmlConverterFactory,
             IProjectAppService projectAppService,
-            IOptions<DocsUrlOptions> options)
+            IOptions<DocsUiOptions> options)
         {
             _documentAppService = documentAppService;
             _documentToHtmlConverterFactory = documentToHtmlConverterFactory;
             _projectAppService = projectAppService;
-            _options = options.Value;
+            _uiOptions = options.Value;
         }
 
         public async Task<IActionResult> OnGetAsync()
         {
-            DocumentsUrlPrefix = _options.RoutePrefix;
-
-            if (IsDocumentCultureDifferentThanCurrent())
-            {
-                return ReloadPageWithCulture();
-            }
+            DocumentsUrlPrefix = _uiOptions.RoutePrefix;
+            ShowProjectsCombobox = _uiOptions.ShowProjectsCombobox;
 
             await SetProjectAsync();
-            await SetProjectsAsync();
+
+            if (ShowProjectsCombobox)
+            {
+                await SetProjectsAsync();
+            }
+
             await SetVersionAsync();
             await SetLanguageList();
 
@@ -93,6 +96,11 @@ namespace Volo.Docs.Pages.Documents.Project
             if (!CheckLanguage())
             {
                 return RedirectToDefaultLanguage();
+            }
+
+            if (IsDocumentCultureDifferentThanCurrent())
+            {
+                return ReloadPageWithCulture();
             }
 
             await SetDocumentAsync();
@@ -114,7 +122,6 @@ namespace Volo.Docs.Pages.Documents.Project
             {
                 return false;
             }
-
         }
 
         private bool IsDefaultDocument()
@@ -145,7 +152,8 @@ namespace Volo.Docs.Pages.Documents.Project
 
         private IActionResult ReloadPageWithCulture()
         {
-            var returnUrl = DocumentsUrlPrefix + LanguageCode + "/" + ProjectName + "/" + Version + "/" +
+            var returnUrl = DocumentsUrlPrefix + LanguageCode + "/" + ProjectName + "/"
+                            + (LatestVersionInfo.IsSelected ? DocsAppConsts.Latest : Version) + "/" +
                             DocumentName;
 
             return Redirect("/Abp/Languages/Switch?culture=" + LanguageCode + "&uiCulture=" + LanguageCode + "&returnUrl=" + returnUrl);
@@ -156,7 +164,7 @@ namespace Volo.Docs.Pages.Documents.Project
             return RedirectToPage(new
             {
                 projectName = ProjectName,
-                version = Version,
+                version = (LatestVersionInfo.IsSelected ? DocsAppConsts.Latest : Version),
                 languageCode = DefaultLanguageCode
             });
         }
@@ -166,7 +174,7 @@ namespace Volo.Docs.Pages.Documents.Project
             return RedirectToPage(new
             {
                 projectName = ProjectName,
-                version = Version,
+                version = (LatestVersionInfo.IsSelected ? DocsAppConsts.Latest : Version),
                 documentName = "",
                 languageCode = DefaultLanguageCode
             });
@@ -179,7 +187,7 @@ namespace Volo.Docs.Pages.Documents.Project
             ProjectSelectItems = projects.Items.Select(p => new SelectListItem
             {
                 Text = p.Name,
-                Value = p.Id != Project.Id ? "/documents/" + LanguageCode + "/" + p.ShortName + "/" + DocsAppConsts.Latest : null,
+                Value = p.Id != Project.Id ? "/" + DocumentsUrlPrefix + LanguageCode + "/" + p.ShortName + "/" + DocsAppConsts.Latest : null,
                 Selected = p.Id == Project.Id
             }).ToList();
         }
@@ -201,7 +209,6 @@ namespace Volo.Docs.Pages.Documents.Project
             {
                 LatestVersionInfo = versions.First();
                 LatestVersionInfo.DisplayText = $"{LatestVersionInfo.DisplayText} ({DocsAppConsts.Latest})";
-                LatestVersionInfo.Version = LatestVersionInfo.Version;
 
                 if (string.Equals(Version, DocsAppConsts.Latest, StringComparison.OrdinalIgnoreCase))
                 {
@@ -348,7 +355,7 @@ namespace Volo.Docs.Pages.Documents.Project
                 LanguageSelectListItems.Add(
                     new SelectListItem(
                         language.DisplayName,
-                        DocumentsUrlPrefix + language.Code + "/" + Project.ShortName + "/" + Version + "/" + DocumentName,
+                        DocumentsUrlPrefix + language.Code + "/" + Project.ShortName + "/" + (LatestVersionInfo.IsSelected ? DocsAppConsts.Latest : Version) + "/" + DocumentName,
                         language.Code == LanguageCode
                         )
                     );

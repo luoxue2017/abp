@@ -53,7 +53,7 @@ export class ErrorHandler {
       const { payload: err = {} as HttpErrorResponse | any } = res;
       const body = snq(() => (err as HttpErrorResponse).error.error, DEFAULTS.defaultError.message);
 
-      if (err.headers.get('_AbpErrorFormat')) {
+      if (err instanceof HttpErrorResponse && err.headers.get('_AbpErrorFormat')) {
         const confirmation$ = this.showError(null, null, body);
 
         if (err.status === 401) {
@@ -80,14 +80,14 @@ export class ErrorHandler {
           case 500:
             this.createErrorComponent({
               title: '500',
-              details: 'Sorry, an error has occured.',
+              details: 'AbpAccount::InternalServerErrorMessage',
             });
             break;
           case 0:
             if ((err as HttpErrorResponse).statusText === 'Unknown Error') {
               this.createErrorComponent({
                 title: 'Unknown Error',
-                details: 'Sorry, an error has occured.',
+                details: 'AbpAccount::InternalServerErrorMessage',
               });
             }
             break;

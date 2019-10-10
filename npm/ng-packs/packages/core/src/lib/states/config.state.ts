@@ -1,10 +1,10 @@
 import { State, Selector, createSelector, Action, StateContext, Store } from '@ngxs/store';
 import { Config, ABP } from '../models';
-import { ConfigGetAppConfiguration, PatchRouteByName } from '../actions/config.actions';
+import { GetAppConfiguration, PatchRouteByName } from '../actions/config.actions';
 import { ApplicationConfigurationService } from '../services/application-configuration.service';
 import { tap, switchMap } from 'rxjs/operators';
 import snq from 'snq';
-import { SessionSetLanguage } from '../actions';
+import { SetLanguage } from '../actions';
 import { SessionState } from './session.state';
 import { of } from 'rxjs';
 import { setChildRoute, sortRoutes, organizeRoutes } from '../utils/route-utils';
@@ -17,6 +17,11 @@ export class ConfigState {
   @Selector()
   static getAll(state: Config.State) {
     return state;
+  }
+
+  @Selector()
+  static getApplicationInfo(state: Config.State): Config.Application {
+    return state.environment.application || ({} as Config.Application);
   }
 
   static getOne(key: string) {
@@ -55,6 +60,24 @@ export class ConfigState {
     return selector;
   }
 
+  static getRoute(path?: string, name?: string) {
+    const selector = createSelector(
+      [ConfigState],
+      function(state: Config.State) {
+        const { flattedRoutes } = state;
+        return (flattedRoutes as ABP.FullRoute[]).find(route => {
+          if (path && route.path === path) {
+            return route;
+          } else if (name && route.name === name) {
+            return route;
+          }
+        });
+      },
+    );
+
+    return selector;
+  }
+
   static getApiUrl(key?: string) {
     const selector = createSelector(
       [ConfigState],
@@ -77,29 +100,12 @@ export class ConfigState {
     return selector;
   }
 
-  static getGrantedPolicy(condition: string = '') {
-    const keys = condition
-      .replace(/\(|\)|\!|\s/g, '')
-      .split(/\|\||&&/)
-      .filter(key => key);
-
+  static getGrantedPolicy(key: string) {
     const selector = createSelector(
       [ConfigState],
       function(state: Config.State): boolean {
-        if (!keys.length) return true;
-
-        const getPolicy = key => snq(() => state.auth.grantedPolicies[key], false);
-        if (keys.length > 1) {
-          keys.forEach(key => {
-            const value = getPolicy(key);
-            condition = condition.replace(key, value);
-          });
-
-          // tslint:disable-next-line: no-eval
-          return eval(`!!${condition}`);
-        }
-
-        return getPolicy(condition);
+        if (!key) return true;
+        return snq(() => state.auth.grantedPolicies[key], false);
       },
     );
 
@@ -113,6 +119,8 @@ export class ConfigState {
     const selector = createSelector(
       [ConfigState],
       function(state: Config.State) {
+        if (!state.localization) return key;
+
         const { defaultResourceName } = state.environment.localization;
         if (keys[0] === '') {
           if (!defaultResourceName) {
@@ -130,7 +138,7 @@ export class ConfigState {
           keys[0] = snq(() => defaultResourceName);
         }
 
-        let copy = keys.reduce((acc, val) => {
+        let copy = (keys as any).reduce((acc, val) => {
           if (acc) {
             return acc[val];
           }
@@ -138,9 +146,10 @@ export class ConfigState {
           return undefined;
         }, state.localization.values);
 
+        interpolateParams = interpolateParams.filter(params => params != null);
         if (copy && interpolateParams && interpolateParams.length) {
-          interpolateParams.forEach((param, index) => {
-            copy = copy.replace(`'{${index}}'`, param);
+          interpolateParams.forEach(param => {
+            copy = copy.replace(/[\'\"]?\{[\d]+\}[\'\"]?/, param);
           });
         }
 
@@ -153,7 +162,7 @@ export class ConfigState {
 
   constructor(private appConfigurationService: ApplicationConfigurationService, private store: Store) {}
 
-  @Action(ConfigGetAppConfiguration)
+  @Action(GetAppConfiguration)
   addData({ patchState, dispatch }: StateContext<Config.State>) {
     return this.appConfigurationService.getConfiguration().pipe(
       tap(configuration =>
@@ -161,13 +170,15 @@ export class ConfigState {
           ...configuration,
         }),
       ),
-      switchMap(configuration =>
-        this.store.selectSnapshot(SessionState.getLanguage)
-          ? of(null)
-          : dispatch(
-              new SessionSetLanguage(snq(() => configuration.setting.values['Abp.Localization.DefaultLanguage'])),
-            ),
-      ),
+      switchMap(configuration => {
+        let defaultLang: string = configuration.setting.values['Abp.Localization.DefaultLanguage'];
+
+        if (defaultLang.includes(';')) {
+          defaultLang = defaultLang.split(';')[0];
+        }
+
+        return this.store.selectSnapshot(SessionState.getLanguage) ? of(null) : dispatch(new SetLanguage(defaultLang));
+      }),
     );
   }
 

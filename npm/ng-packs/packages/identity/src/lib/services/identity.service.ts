@@ -9,10 +9,11 @@ import { Identity } from '../models/identity';
 export class IdentityService {
   constructor(private rest: RestService) {}
 
-  getRoles(): Observable<Identity.RoleResponse> {
+  getRoles(params = {} as ABP.PageQueryParams): Observable<Identity.RoleResponse> {
     const request: Rest.Request<null> = {
       method: 'GET',
       url: '/api/identity/roles',
+      params,
     };
 
     return this.rest.request<null, Identity.RoleResponse>(request);
@@ -36,7 +37,7 @@ export class IdentityService {
     return this.rest.request<null, Identity.RoleItem>(request);
   }
 
-  addRole(body: Identity.RoleSaveRequest): Observable<Identity.RoleItem> {
+  createRole(body: Identity.RoleSaveRequest): Observable<Identity.RoleItem> {
     const request: Rest.Request<Identity.RoleSaveRequest> = {
       method: 'POST',
       url: '/api/identity/roles',
@@ -96,7 +97,7 @@ export class IdentityService {
     return this.rest.request<null, null>(request);
   }
 
-  addUser(body: Identity.UserSaveRequest): Observable<Identity.UserItem> {
+  createUser(body: Identity.UserSaveRequest): Observable<Identity.UserItem> {
     const request: Rest.Request<Identity.UserSaveRequest> = {
       method: 'POST',
       url: '/api/identity/users',
@@ -107,7 +108,7 @@ export class IdentityService {
   }
 
   updateUser(body: Identity.UserItem): Observable<Identity.UserItem> {
-    const url = `/identity/users/${body.id}`;
+    const url = `/api/identity/users/${body.id}`;
     delete body.id;
 
     const request: Rest.Request<Identity.UserItem> = {

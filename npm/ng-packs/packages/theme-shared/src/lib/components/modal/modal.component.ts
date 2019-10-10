@@ -9,11 +9,13 @@ import {
   Renderer2,
   TemplateRef,
   ViewChild,
+  ViewChildren,
 } from '@angular/core';
 import { fromEvent, Subject, timer } from 'rxjs';
-import { debounceTime, filter, take, takeUntil } from 'rxjs/operators';
-import { ConfirmationService } from '../../services/confirmation.service';
+import { filter, take, takeUntil, debounceTime } from 'rxjs/operators';
 import { Toaster } from '../../models/toaster';
+import { ConfirmationService } from '../../services/confirmation.service';
+import { ButtonComponent } from '../button/button.component';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -49,10 +51,21 @@ export class ModalComponent implements OnDestroy {
       this.renderer.addClass(this.modalContent.nativeElement, 'fade-out-top');
       setTimeout(() => {
         this.setVisible(value);
-        // this.renderer.removeClass(this.modalContent.nativeElement, 'fade-out-top');
         this.ngOnDestroy();
       }, ANIMATION_TIMEOUT - 10);
     }
+  }
+
+  @Input()
+  get busy(): boolean {
+    return this._busy;
+  }
+  set busy(value: boolean) {
+    if (this.abpSubmit && this.abpSubmit instanceof ButtonComponent) {
+      this.abpSubmit.loading = value;
+    }
+
+    this._busy = value;
   }
 
   @Input() centered: boolean = false;
@@ -61,11 +74,11 @@ export class ModalComponent implements OnDestroy {
 
   @Input() size: ModalSize = 'lg';
 
-  @Output() visibleChange = new EventEmitter<boolean>();
-
   @Input() height: number;
 
   @Input() minHeight: number;
+
+  @Output() visibleChange = new EventEmitter<boolean>();
 
   @Output() init = new EventEmitter<void>();
 
@@ -77,9 +90,21 @@ export class ModalComponent implements OnDestroy {
 
   @ContentChild('abpClose', { static: false, read: ElementRef }) abpClose: ElementRef<any>;
 
+  @ContentChild(ButtonComponent, { static: false, read: ButtonComponent }) abpSubmit: ButtonComponent;
+
   @ViewChild('abpModalContent', { static: false }) modalContent: ElementRef;
 
+  @ViewChildren('abp-button') abpButtons;
+
+  @Output()
+  show = new EventEmitter();
+
+  @Output()
+  hide = new EventEmitter();
+
   _visible: boolean = false;
+
+  _busy: boolean = false;
 
   showModal: boolean = false;
 
@@ -100,56 +125,47 @@ export class ModalComponent implements OnDestroy {
     this.visibleChange.emit(value);
     this.showModal = value;
 
-    value
-      ? timer(ANIMATION_TIMEOUT + 100)
-          .pipe(take(1))
-          .subscribe(_ => (this.closable = true))
-      : (this.closable = false);
+    if (value) {
+      timer(ANIMATION_TIMEOUT + 100)
+        .pipe(take(1))
+        .subscribe(_ => (this.closable = true));
+
+      this.renderer.addClass(document.body, 'modal-open');
+      this.show.emit();
+    } else {
+      this.closable = false;
+      this.renderer.removeClass(document.body, 'modal-open');
+      this.hide.emit();
+    }
   }
 
   listen() {
-    fromEvent(document, 'click')
-      .pipe(
-        debounceTime(100),
-        takeUntil(this.destroy$),
-        filter((event: MouseEvent) => {
-          const isOpenConfirmation = this.isOpenConfirmation || document.querySelector('p-toastitem');
-          return (
-            event &&
-            this.closable &&
-            this.modalContent &&
-            !isOpenConfirmation &&
-            !this.modalContent.nativeElement.contains(event.target)
-          );
-        }),
-      )
-      .subscribe(_ => {
-        this.close();
-      });
-
     fromEvent(document, 'keyup')
       .pipe(
         takeUntil(this.destroy$),
-        debounceTime(250),
+        debounceTime(150),
         filter((key: KeyboardEvent) => key && key.code === 'Escape' && this.closable),
       )
       .subscribe(_ => {
         this.close();
       });
 
-    if (!this.abpClose) return;
-
-    fromEvent(this.abpClose.nativeElement, 'click')
-      .pipe(
-        takeUntil(this.destroy$),
-        filter(() => !!(this.closable && this.modalContent)),
-      )
-      .subscribe(() => this.close());
+    setTimeout(() => {
+      if (!this.abpClose) return;
+      fromEvent(this.abpClose.nativeElement, 'click')
+        .pipe(
+          takeUntil(this.destroy$),
+          filter(() => !!(this.closable && this.modalContent)),
+        )
+        .subscribe(() => this.close());
+    }, 0);
 
     this.init.emit();
   }
 
   close() {
+    if (!this.closable || this.busy) return;
+
     const nodes = getFlatNodes(
       (this.modalContent.nativeElement.querySelector('#abp-modal-body') as HTMLElement).childNodes,
     );

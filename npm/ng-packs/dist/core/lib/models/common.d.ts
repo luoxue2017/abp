@@ -1,5 +1,5 @@
 import { Config } from './config';
-import { eLayoutType } from '../enums';
+import { eLayoutType } from '../enums/common';
 export declare namespace ABP {
     interface Root {
         environment: Partial<Config.Environment>;
@@ -26,6 +26,7 @@ export declare namespace ABP {
         parentName?: string;
         path: string;
         requiredPolicy?: string;
+        iconClass?: string;
     }
     interface FullRoute extends Route {
         url?: string;

@@ -1,19 +1,18 @@
 import { NgModule } from '@angular/core';
-import { Routes, RouterModule } from '@angular/router';
-
+import { RouterModule, Routes } from '@angular/router';
 import { BooksComponent } from './books.component';
-import { LayoutApplicationComponent } from '@abp/ng.theme.basic';
+import { BookListComponent } from './book-list/book-list.component';
 
 const routes: Routes = [
   {
     path: '',
-    component: LayoutApplicationComponent,
-    children: [{ path: '', component: BooksComponent }],
+    component: BooksComponent,
+    children: [{ path: '', component: BookListComponent }],
   },
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class BooksRoutingModule { }
+export class BooksRoutingModule {}

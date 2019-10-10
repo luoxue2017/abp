@@ -9,16 +9,17 @@ import { TenantManagement } from '../models/tenant-management';
 export class TenantManagementService {
   constructor(private rest: RestService) {}
 
-  get(): Observable<TenantManagement.Response> {
+  getTenant(params = {} as ABP.PageQueryParams): Observable<TenantManagement.Response> {
     const request: Rest.Request<null> = {
       method: 'GET',
       url: '/api/multi-tenancy/tenants',
+      params,
     };
 
     return this.rest.request<null, TenantManagement.Response>(request);
   }
 
-  getById(id: string): Observable<ABP.BasicItem> {
+  getTenantById(id: string): Observable<ABP.BasicItem> {
     const request: Rest.Request<null> = {
       method: 'GET',
       url: `/api/multi-tenancy/tenants/${id}`,
@@ -27,7 +28,7 @@ export class TenantManagementService {
     return this.rest.request<null, ABP.BasicItem>(request);
   }
 
-  delete(id: string): Observable<null> {
+  deleteTenant(id: string): Observable<null> {
     const request: Rest.Request<null> = {
       method: 'DELETE',
       url: `/api/multi-tenancy/tenants/${id}`,
@@ -36,7 +37,7 @@ export class TenantManagementService {
     return this.rest.request<null, null>(request);
   }
 
-  add(body: TenantManagement.AddRequest): Observable<ABP.BasicItem> {
+  createTenant(body: TenantManagement.AddRequest): Observable<ABP.BasicItem> {
     const request: Rest.Request<TenantManagement.AddRequest> = {
       method: 'POST',
       url: `/api/multi-tenancy/tenants`,
@@ -46,7 +47,7 @@ export class TenantManagementService {
     return this.rest.request<TenantManagement.AddRequest, ABP.BasicItem>(request);
   }
 
-  update(body: TenantManagement.UpdateRequest): Observable<ABP.BasicItem> {
+  updateTenant(body: TenantManagement.UpdateRequest): Observable<ABP.BasicItem> {
     const url = `/api/multi-tenancy/tenants/${body.id}`;
     delete body.id;
 
@@ -60,7 +61,7 @@ export class TenantManagementService {
   }
 
   getDefaultConnectionString(id: string): Observable<string> {
-    const url = `/api/multi-tenancy/tenants/${id}/defaultConnectionString`;
+    const url = `/api/multi-tenancy/tenants/${id}/default-connection-string`;
 
     const request: Rest.Request<TenantManagement.DefaultConnectionStringRequest> = {
       method: 'GET',
@@ -71,7 +72,7 @@ export class TenantManagementService {
   }
 
   updateDefaultConnectionString(payload: TenantManagement.DefaultConnectionStringRequest): Observable<any> {
-    const url = `/api/multi-tenancy/tenants/${payload.id}/defaultConnectionString`;
+    const url = `/api/multi-tenancy/tenants/${payload.id}/default-connection-string`;
 
     const request: Rest.Request<TenantManagement.DefaultConnectionStringRequest> = {
       method: 'PUT',
@@ -82,7 +83,7 @@ export class TenantManagementService {
   }
 
   deleteDefaultConnectionString(id: string): Observable<string> {
-    const url = `/api/multi-tenancy/tenant/${id}/defaultConnectionString`;
+    const url = `/api/multi-tenancy/tenants/${id}/default-connection-string`;
 
     const request: Rest.Request<TenantManagement.DefaultConnectionStringRequest> = {
       method: 'DELETE',

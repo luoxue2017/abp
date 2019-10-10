@@ -1,6 +1,9 @@
 import { Action, Selector, State, StateContext } from '@ngxs/store';
-import { SessionSetLanguage, SessionSetTenantId } from '../actions/session.actions';
-import { Session } from '../models/session';
+import { SetLanguage, SetTenant } from '../actions/session.actions';
+import { ABP, Session } from '../models';
+import { GetAppConfiguration } from '../actions/config.actions';
+import { LocalizationService } from '../services/localization.service';
+import { from, combineLatest } from 'rxjs';
 
 @State<Session.State>({
   name: 'SessionState',
@@ -13,23 +16,25 @@ export class SessionState {
   }
 
   @Selector()
-  static getSelectedTenantId({ tenantId }: Session.State): string {
-    return tenantId;
+  static getTenant({ tenant }: Session.State): ABP.BasicItem {
+    return tenant;
   }
 
-  constructor() {}
+  constructor(private localizationService: LocalizationService) {}
 
-  @Action(SessionSetLanguage)
-  sessionSetLanguage({ patchState }: StateContext<Session.State>, { payload }: SessionSetLanguage) {
+  @Action(SetLanguage)
+  setLanguage({ patchState, dispatch }: StateContext<Session.State>, { payload }: SetLanguage) {
     patchState({
       language: payload,
     });
+
+    return combineLatest([dispatch(new GetAppConfiguration()), from(this.localizationService.registerLocale(payload))]);
   }
 
-  @Action(SessionSetTenantId)
-  sessionSetTenantId({ patchState }: StateContext<Session.State>, { payload }: SessionSetTenantId) {
+  @Action(SetTenant)
+  setTenantId({ patchState }: StateContext<Session.State>, { payload }: SetTenant) {
     patchState({
-      tenantId: payload,
+      tenant: payload,
     });
   }
 }

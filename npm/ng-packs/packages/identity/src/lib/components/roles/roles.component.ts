@@ -1,17 +1,13 @@
+import { ABP } from '@abp/ng.core';
+import { ConfirmationService, Toaster } from '@abp/ng.theme.shared';
 import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { Select, Store } from '@ngxs/store';
 import { Observable } from 'rxjs';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { IdentityState } from '../../states/identity.state';
+import { finalize, pluck } from 'rxjs/operators';
+import { CreateRole, DeleteRole, GetRoleById, GetRoles, UpdateRole } from '../../actions/identity.actions';
 import { Identity } from '../../models/identity';
-import {
-  IdentityUpdateRole,
-  IdentityAddRole,
-  IdentityDeleteRole,
-  IdentityGetRoleById,
-} from '../../actions/identity.actions';
-import { pluck } from 'rxjs/operators';
-import { ConfirmationService, Toaster } from '@abp/ng.theme.shared';
+import { IdentityState } from '../../states/identity.state';
 
 @Component({
   selector: 'abp-roles',
@@ -19,7 +15,10 @@ import { ConfirmationService, Toaster } from '@abp/ng.theme.shared';
 })
 export class RolesComponent {
   @Select(IdentityState.getRoles)
-  roles$: Observable<Identity.RoleItem[]>;
+  data$: Observable<Identity.RoleItem[]>;
+
+  @Select(IdentityState.getRolesTotalCount)
+  totalCount$: Observable<number>;
 
   form: FormGroup;
 
@@ -31,14 +30,32 @@ export class RolesComponent {
 
   providerKey: string;
 
+  pageQuery: ABP.PageQueryParams = {
+    sorting: 'name',
+  };
+
+  loading: boolean = false;
+
+  modalBusy: boolean = false;
+
+  sortOrder: string = 'asc';
+
   @ViewChild('modalContent', { static: false })
   modalContent: TemplateRef<any>;
 
   constructor(private confirmationService: ConfirmationService, private fb: FormBuilder, private store: Store) {}
 
+  onSearch(value) {
+    this.pageQuery.filter = value;
+    this.get();
+  }
+
   createForm() {
     this.form = this.fb.group({
-      name: [this.selected.name || '', [Validators.required, Validators.maxLength(256)]],
+      name: new FormControl({ value: this.selected.name || '', disabled: this.selected.isStatic }, [
+        Validators.required,
+        Validators.maxLength(256),
+      ]),
       isDefault: [this.selected.isDefault || false],
       isPublic: [this.selected.isPublic || false],
     });
@@ -56,7 +73,7 @@ export class RolesComponent {
 
   onEdit(id: string) {
     this.store
-      .dispatch(new IdentityGetRoleById(id))
+      .dispatch(new GetRoleById(id))
       .pipe(pluck('IdentityState', 'selectedRole'))
       .subscribe(selectedRole => {
         this.selected = selectedRole;
@@ -66,14 +83,16 @@ export class RolesComponent {
 
   save() {
     if (!this.form.valid) return;
+    this.modalBusy = true;
 
     this.store
       .dispatch(
         this.selected.id
-          ? new IdentityUpdateRole({ ...this.form.value, id: this.selected.id })
-          : new IdentityAddRole(this.form.value),
+          ? new UpdateRole({ ...this.form.value, id: this.selected.id })
+          : new CreateRole(this.form.value),
       )
       .subscribe(() => {
+        this.modalBusy = false;
         this.isModalVisible = false;
       });
   }
@@ -85,8 +104,27 @@ export class RolesComponent {
       })
       .subscribe((status: Toaster.Status) => {
         if (status === Toaster.Status.confirm) {
-          this.store.dispatch(new IdentityDeleteRole(id));
+          this.store.dispatch(new DeleteRole(id));
         }
       });
+  }
+
+  onPageChange(data) {
+    this.pageQuery.skipCount = data.first;
+    this.pageQuery.maxResultCount = data.rows;
+
+    this.get();
+  }
+
+  get() {
+    this.loading = true;
+    this.store
+      .dispatch(new GetRoles(this.pageQuery))
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe();
+  }
+
+  changeSortOrder() {
+    this.sortOrder = this.sortOrder.toLowerCase() === 'asc' ? 'desc' : 'asc';
   }
 }
